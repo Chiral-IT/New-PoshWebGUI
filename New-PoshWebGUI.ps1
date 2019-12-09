@@ -114,7 +114,7 @@ Function Start-PoshWebGUI ($ScriptBlock)
 
         $result = try {.$ScriptBlock} catch {$_.Exception.Message}
 
-        if($result -ne $null) {
+        if($null -ne $result) {
             if($result -is [string]){
                 
                 Write-Verbose "A [string] object was returned. Writing it directly to the response stream."
@@ -142,6 +142,39 @@ Function Start-PoshWebGUI ($ScriptBlock)
         $Context.Response.Close()
 
         $Context.Response
+    }
+
+}
+Start-PoshWebGUI -ScriptBlock {
+
+    switch ($Context.Request.Url.LocalPath)
+    {
+
+        "/loadProcesses" { Get-Process $Context.Request.QueryString["ProcessName"] | Select-Object cpu,name | ConvertTo-Html | Out-String }
+        "/loadServices" { Get-Service $Context.Request.QueryString["ServiceName"] | Select-Object Status,Name,DisplayName | ConvertTo-Html | Out-String }
+        
+        default { @"
+        
+        <h1>Simple Task Manager</h1>
+        
+        <form action="/loadProcesses">
+            <h2>Load Processes</h2>
+            <p>Filter by name</p>
+            <input name="ProcessName"></input>
+            <button type="submit">Submit</button>
+            
+        </form>
+
+        <form action="/loadServices">
+            <h2>Load Services</h2>
+            <p>Filter by name</p>
+            <input name="ServiceName"></input>
+            <button type="submit">Submit</button>
+            
+        </form>      
+        
+"@ }
+
     }
 
 }
